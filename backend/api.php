@@ -90,7 +90,7 @@ switch ($action) {
     case 'register':
         $data = json_decode(file_get_contents("php://input"), true) ?? [];
 
-        if (empty($_GET['full_name']) || empty($_GET['email']) || empty($_GET['phone']) || empty($_GET['password'])) {
+        if (empty($data['full_name']) || empty($data['email']) || empty($data['phone']) || empty($data['password'])) {
             json_response("error", "Missing required fields");
         }
 
@@ -400,7 +400,9 @@ switch ($action) {
             json_response("error", "Invalid transaction PIN");
         }
 
-        $stmt1 = $db->prepare("SELECT id, balance, kyc_tier FROM accounts WHERE user_id = ?");
+        $stmt1 = $db->prepare("SELECT a.id, a.balance, a.kyc_tier, u.full_name
+                              FROM accounts a JOIN users u ON a.user_id = u.id
+                              WHERE a.user_id = ?");
         $stmt1->bind_param("i", $user['sub']);
         $stmt1->execute();
         $sender = $stmt1->get_result()->fetch_assoc();
