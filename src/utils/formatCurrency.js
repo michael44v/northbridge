@@ -1,8 +1,14 @@
-export const formatUSD = (amount) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+export const formatUSD = (amount, currencyCode = 'USD') => {
+  const code = currencyCode || 'USD';
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+    }).format(amount);
+  } catch (e) {
+    const symbol = code === 'GBP' ? '£' : code === 'EUR' ? '€' : '$';
+    return `${symbol}${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  }
 };
 
 export const formatUSD_S = (amount) => {

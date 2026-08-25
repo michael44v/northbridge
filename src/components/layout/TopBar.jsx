@@ -93,9 +93,17 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
           )}
         </div>
 
-        <div className="w-8 h-8 bg-chase-blue text-white rounded-full flex items-center justify-center text-sm font-bold select-none">
-          {user?.full_name?.charAt(0)}
-        </div>
+        {user?.profile_picture ? (
+          <img
+            src={user.profile_picture}
+            alt={user.full_name}
+            className="w-8 h-8 rounded-full object-cover border border-chase-blue shadow-sm"
+          />
+        ) : (
+          <div className="w-8 h-8 bg-chase-blue text-white rounded-full flex items-center justify-center text-sm font-bold select-none">
+            {user?.full_name?.charAt(0)}
+          </div>
+        )}
       </div>
     </header>
   );

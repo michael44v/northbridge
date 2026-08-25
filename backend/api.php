@@ -329,7 +329,7 @@ switch ($action) {
     case 'get_account_details':
         $user = require_auth();
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT a.*, u.full_name, u.email FROM accounts a JOIN users u ON a.user_id = u.id WHERE a.user_id = ?");
+        $stmt = $db->prepare("SELECT a.*, u.full_name, u.email, u.phone, u.profile_picture, u.state, u.zipcode, u.occupation, u.dob, u.sex FROM accounts a JOIN users u ON a.user_id = u.id WHERE a.user_id = ?");
         $stmt->bind_param("i", $user['sub']);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
@@ -786,7 +786,9 @@ case 'get_transactions':
     case 'get_profile':
         $user = require_auth();
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT id, full_name, email, phone, role, status, created_at FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, u.created_at, u.profile_picture, u.state, u.zipcode, u.occupation, u.dob, u.sex,
+                                     a.account_number, a.balance, a.ledger_balance, a.currency, a.swift_code, a.routing_code, a.transfer_limit, a.account_type, a.kyc_tier
+                              FROM users u LEFT JOIN accounts a ON u.id = a.user_id WHERE u.id = ?");
         $stmt->bind_param("i", $user['sub']);
         $stmt->execute();
         $profile = $stmt->get_result()->fetch_assoc();
@@ -910,11 +912,116 @@ case 'get_transactions':
         if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
 
         $db = Database::getInstance()->getConnection();
-        $res = $db->query("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, a.account_number, a.balance, a.kyc_tier
+        $res = $db->query("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, u.profile_picture, u.state, u.zipcode, u.occupation, u.dob, u.sex,
+                                 a.account_number, a.balance, a.ledger_balance, a.currency, a.swift_code, a.routing_code, a.transfer_limit, a.account_type, a.kyc_tier
                            FROM users u JOIN accounts a ON u.id = a.user_id ORDER BY u.created_at DESC");
         $users = [];
         while ($row = $res->fetch_assoc()) { $users[] = $row; }
         json_response("success", "User list", $users);
+        break;
+
+    case 'admin_update_user_full':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['user_id'])) {
+            json_response("error", "User ID is required");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $db->begin_transaction();
+        try {
+            $user_id = (int)$data['user_id'];
+
+            // Update users table
+            $stmt1 = $db->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, profile_picture = ?, state = ?, zipcode = ?, occupation = ?, dob = ?, sex = ?, status = ? WHERE id = ?");
+            $stmt1->bind_param("ssssssssssi",
+                $data['full_name'],
+                $data['email'],
+                $data['phone'],
+                $data['profile_picture'],
+                $data['state'],
+                $data['zipcode'],
+                $data['occupation'],
+                $data['dob'],
+                $data['sex'],
+                $data['status'],
+                $user_id
+            );
+            $stmt1->execute();
+
+            // Update accounts table
+            $stmt2 = $db->prepare("UPDATE accounts SET account_number = ?, balance = ?, ledger_balance = ?, currency = ?, swift_code = ?, routing_code = ?, kyc_tier = ?, transfer_limit = ?, account_type = ? WHERE user_id = ?");
+            $stmt2->bind_param("sddsssidsi",
+                $data['account_number'],
+                $data['balance'],
+                $data['ledger_balance'],
+                $data['currency'],
+                $data['swift_code'],
+                $data['routing_code'],
+                $data['kyc_tier'],
+                $data['transfer_limit'],
+                $data['account_type'],
+                $user_id
+            );
+            $stmt2->execute();
+
+            $db->commit();
+            json_response("success", "User account updated successfully");
+        } catch (Exception $e) {
+            $db->rollback();
+            json_response("error", "Failed to update user account: " . $e->getMessage());
+        }
+        break;
+
+    case 'admin_seed_transactions':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['user_id']) || empty($data['transactions']) || !is_array($data['transactions'])) {
+            json_response("error", "User ID and transactions array are required");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $db->begin_transaction();
+        try {
+            $user_id = (int)$data['user_id'];
+            $stmt_acc = $db->prepare("SELECT id, balance FROM accounts WHERE user_id = ?");
+            $stmt_acc->bind_param("i", $user_id);
+            $stmt_acc->execute();
+            $acc = $stmt_acc->get_result()->fetch_assoc();
+
+            if (!$acc) {
+                throw new Exception("Account not found for this user");
+            }
+
+            $current_balance = (float)$acc['balance'];
+
+            foreach ($data['transactions'] as $tx) {
+                $ref = "SEED" . time() . strtoupper(bin2hex(random_bytes(3)));
+                $amount = (float)($tx['amount'] ?? 0);
+                $type = ($tx['type'] === 'debit') ? 'debit' : 'credit';
+                $narration = $tx['narration'] ?? $tx['description'] ?? 'Seeded Transaction';
+                $created_at = !empty($tx['created_at']) ? $tx['created_at'] : (!empty($tx['date']) ? $tx['date'] : date('Y-m-d H:i:s'));
+
+                // Ensure valid datetime format
+                if (strlen($created_at) === 10) {
+                    $created_at .= " " . sprintf("%02d:%02d:%02d", rand(8, 18), rand(0, 59), rand(0, 59));
+                }
+
+                $stmt_tx = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, status, created_at) VALUES (?, ?, 'adjustment', ?, ?, ?, ?, 'completed', ?)");
+                $stmt_tx->bind_param("issdsss", $acc['id'], $type, $amount, $current_balance, $narration, $ref, $created_at);
+                $stmt_tx->execute();
+            }
+
+            $db->commit();
+            json_response("success", count($data['transactions']) . " transactions seeded successfully");
+        } catch (Exception $e) {
+            $db->rollback();
+            json_response("error", "Failed to seed transactions: " . $e->getMessage());
+        }
         break;
 
     case 'admin_get_kyc_queue':

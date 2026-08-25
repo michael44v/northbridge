@@ -146,17 +146,38 @@ const ProfileSettings = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-chase-navy p-6 rounded-2xl text-white">
-            <div className="w-16 h-16 bg-chase-blue rounded-full flex items-center justify-center text-2xl font-black mb-4">
-              {profile.full_name.charAt(0)}
-            </div>
+          <div className="bg-chase-navy p-6 rounded-2xl text-white shadow-md">
+            {profile.profile_picture ? (
+              <img
+                src={profile.profile_picture}
+                alt={profile.full_name}
+                className="w-20 h-20 rounded-full object-cover border-2 border-chase-blue shadow-md mb-4"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-chase-blue rounded-full flex items-center justify-center text-2xl font-black mb-4">
+                {profile.full_name ? profile.full_name.charAt(0) : 'U'}
+              </div>
+            )}
             <h3 className="text-xl font-bold">{profile.full_name}</h3>
-            <p className="text-white/60 text-sm mb-4">{profile.email}</p>
-            <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider">
-              {profile.role}
+            <p className="text-white/60 text-sm mb-2">{profile.email}</p>
+            <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+              {profile.role} • Tier {profile.kyc_tier ?? 0}
             </div>
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <p className="text-xs text-white/40">Member since {new Date(profile.created_at).toLocaleDateString()}</p>
+
+            <div className="mt-4 pt-4 border-t border-white/10 text-xs space-y-2 text-white/80">
+              {profile.account_number && <p><span className="text-white/50">Acc No:</span> <span className="font-mono">{profile.account_number}</span></p>}
+              {profile.account_type && <p><span className="text-white/50">Type:</span> {profile.account_type}</p>}
+              {profile.currency && <p><span className="text-white/50">Currency:</span> {profile.currency}</p>}
+              {profile.swift_code && <p><span className="text-white/50">SWIFT:</span> <span className="font-mono">{profile.swift_code}</span></p>}
+              {profile.routing_code && <p><span className="text-white/50">Routing:</span> <span className="font-mono">{profile.routing_code}</span></p>}
+              {profile.occupation && <p><span className="text-white/50">Occupation:</span> {profile.occupation}</p>}
+              {profile.dob && <p><span className="text-white/50">DOB:</span> {profile.dob}</p>}
+              {profile.sex && <p><span className="text-white/50">Sex:</span> {profile.sex}</p>}
+              {profile.state && <p><span className="text-white/50">Location:</span> {profile.state}{profile.zipcode ? `, ${profile.zipcode}` : ''}</p>}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-xs text-white/40">Member since {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
             </div>
           </div>
         </div>
