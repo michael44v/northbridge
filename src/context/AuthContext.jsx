@@ -7,13 +7,39 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get('?action=get_profile');
+      if (response.data.status === 'success') {
+        const fullUser = response.data.data;
+        setUser(prev => ({
+          ...prev,
+          ...fullUser,
+          account_status: fullUser.status || fullUser.account_status || 'active'
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh user profile:', e);
+    }
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      fetchProfile();
     }
     setLoading(false);
   }, []);
+
+  // Poll profile periodically if logged in to detect status updates
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchProfile();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const login = async (email, password, pin = null) => {
     try {
@@ -23,6 +49,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('user', JSON.stringify(user));
         setUser(user);
+        fetchProfile();
         return { success: true };
       } else if (response.data.status === 'pin_required') {
         return { success: false, pin_required: true, message: response.data.message };
@@ -41,7 +68,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, refreshProfile: fetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

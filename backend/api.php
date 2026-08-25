@@ -16,7 +16,8 @@ require_once 'Security.php';
 require_once 'EmailService.php';
 
 // CORS headers
-header("Access-Control-Allow-Origin: " . ALLOWED_ORIGIN);
+$origin = $_SERVER['HTTP_ORIGIN'] ?? ALLOWED_ORIGIN;
+header("Access-Control-Allow-Origin: " . $origin);
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
@@ -184,11 +185,13 @@ switch ($action) {
         }
 
         if (!empty($user['pin_hash'])) {
-            if (empty($data['pin'])) {
-                json_response("pin_required", "Transaction PIN required for login", ["user_id" => $user['id']]);
-            }
-            if (!Security::verifyData($data['pin'], $user['pin_hash'])) {
-                json_response("error", "Invalid Transaction PIN");
+            if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') {
+                if (empty($data['pin'])) {
+                    json_response("pin_required", "Transaction PIN required for login", ["user_id" => $user['id']]);
+                }
+                if (!Security::verifyData($data['pin'], $user['pin_hash'])) {
+                    json_response("error", "Invalid Transaction PIN");
+                }
             }
         }
 
@@ -918,6 +921,60 @@ case 'get_transactions':
         $users = [];
         while ($row = $res->fetch_assoc()) { $users[] = $row; }
         json_response("success", "User list", $users);
+        break;
+
+    case 'admin_create_user':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['full_name']) || empty($data['email']) || empty($data['phone']) || empty($data['password'])) {
+            json_response("error", "Full name, email, phone, and password are required.");
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? OR phone = ?");
+        $stmt->bind_param("ss", $data['email'], $data['phone']);
+        $stmt->execute();
+        if ($stmt->get_result()->fetch_assoc()) {
+            json_response("error", "User with this email or phone already exists.");
+        }
+
+        $password_hash = Security::hashData($data['password']);
+        $state = $data['state'] ?? '';
+        $zipcode = $data['zipcode'] ?? '';
+        $occupation = $data['occupation'] ?? '';
+        $dob = $data['dob'] ?? '';
+        $sex = $data['sex'] ?? 'Male';
+
+        $db->begin_transaction();
+        try {
+            $stmt = $db->prepare("INSERT INTO users (full_name, email, phone, password_hash, email_verified_at, state, zipcode, occupation, dob, sex, status) VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, 'active')");
+            $stmt->bind_param("sssssssss", $data['full_name'], $data['email'], $data['phone'], $password_hash, $state, $zipcode, $occupation, $dob, $sex);
+            $stmt->execute();
+            $user_id = $db->insert_id;
+
+            $account_number = !empty($data['account_number']) ? $data['account_number'] : str_pad(random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
+            $balance = isset($data['balance']) ? (float)$data['balance'] : 0.00;
+            $ledger_balance = isset($data['ledger_balance']) ? (float)$data['ledger_balance'] : $balance;
+            $currency = !empty($data['currency']) ? $data['currency'] : 'GBP';
+            $swift_code = !empty($data['swift_code']) ? $data['swift_code'] : 'STRCGB2L';
+            $routing_code = !empty($data['routing_code']) ? $data['routing_code'] : '10-20-30';
+            $kyc_tier = isset($data['kyc_tier']) ? (int)$data['kyc_tier'] : 2;
+            $transfer_limit = isset($data['transfer_limit']) ? (float)$data['transfer_limit'] : 200000.00;
+            $account_type = !empty($data['account_type']) ? $data['account_type'] : 'Savings Account';
+
+            $stmt_acc = $db->prepare("INSERT INTO accounts (user_id, account_number, balance, ledger_balance, currency, swift_code, routing_code, kyc_tier, transfer_limit, account_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
+            $stmt_acc->bind_param("isddsssids", $user_id, $account_number, $balance, $ledger_balance, $currency, $swift_code, $routing_code, $kyc_tier, $transfer_limit, $account_type);
+            $stmt_acc->execute();
+
+            $db->commit();
+            json_response("success", "User account created successfully!", ["user_id" => $user_id, "account_number" => $account_number]);
+        } catch (Exception $e) {
+            $db->rollback();
+            json_response("error", "Failed to create user account: " . $e->getMessage());
+        }
         break;
 
     case 'admin_update_user_full':
