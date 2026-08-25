@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const instance = axios.create({
- // baseURL: 'http://localhost:80/backend/northbridge/api.php',
+  baseURL: 'http://bluevult.com/api/north/api.php',
 
 
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api.php',
+//  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api.php',
   headers: {
     'Content-Type': 'application/json',
   },
