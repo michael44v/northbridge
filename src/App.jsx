@@ -28,6 +28,7 @@ import ChangePIN from './pages/profile/ChangePIN';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserList from './pages/admin/UserList';
+import SeedTransactions from './pages/admin/SeedTransactions';
 import KYCQueue from './pages/admin/KYCQueue';
 import AMLQueue from './pages/admin/AMLQueue';
 import TransactionMonitor from './pages/admin/TransactionMonitor';
@@ -74,6 +75,8 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserList />} />
+            <Route path="seed-transactions" element={<SeedTransactions />} />
+            <Route path="seed-transactions/:userId" element={<SeedTransactions />} />
             <Route path="kyc" element={<KYCQueue />} />
             <Route path="swap" element={<SwapProtocols />} />
             <Route path="transactions" element={<TransactionMonitor />} />

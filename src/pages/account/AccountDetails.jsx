@@ -55,8 +55,8 @@ const AccountDetails = () => {
               <Globe size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Routing Number</p>
-              <p className="text-xl font-bold text-chase-navy">123456789</p>
+              <p className="text-sm text-gray-500">SWIFT / Routing Code</p>
+              <p className="text-xl font-bold text-chase-navy">{account?.swift_code || 'STRCGB2L'} / {account?.routing_code || '10-20-30'}</p>
             </div>
           </div>
 
@@ -77,19 +77,27 @@ const AccountDetails = () => {
               <CreditCard size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Balance</p>
-              <p className="text-3xl font-black text-chase-navy">{formatUSD(account?.balance)}</p>
+              <p className="text-sm text-gray-500">Total Balance ({account?.currency || 'USD'})</p>
+              <p className="text-3xl font-black text-chase-navy">{formatUSD(account?.balance, account?.currency)}</p>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-chase-border">
-            <div className="flex justify-between items-center mb-2">
+          <div className="pt-6 border-t border-chase-border space-y-2">
+            <div className="flex justify-between items-center">
               <span className="text-gray-500 text-sm">Ledger Balance</span>
-              <span className="font-semibold text-chase-navy">{formatUSD(account?.ledger_balance)}</span>
+              <span className="font-semibold text-chase-navy">{formatUSD(account?.ledger_balance, account?.currency)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-500 text-sm">Available Balance</span>
-              <span className="font-black text-chase-blue">{formatUSD(account?.balance)}</span>
+              <span className="font-black text-chase-blue">{formatUSD(account?.balance, account?.currency)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">Transfer Limit</span>
+              <span className="font-semibold text-gray-700">{formatUSD(account?.transfer_limit || 200000, account?.currency)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">Account Type</span>
+              <span className="font-bold text-chase-navy">{account?.account_type || 'Savings Account'}</span>
             </div>
           </div>
         </div>
