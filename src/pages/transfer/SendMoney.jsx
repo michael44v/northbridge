@@ -31,7 +31,7 @@ const SendMoney = () => {
     confirm_name: '',
     bank_id: '',
     manual_bank_name: '',
-    manual_account_name: user?.full_name || ''
+    manual_account_name: ''
   });
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const SendMoney = () => {
         confirm_name: '',
         bank_id: '',
         manual_bank_name: '',
-        manual_account_name: user?.full_name || ''
+        manual_account_name: ''
     }));
   }, [typeParam]);
 
@@ -86,27 +86,23 @@ const SendMoney = () => {
       const response = await api.get(`?action=resolve_account&account_number=${num}`);
       if (response.data.status === 'success') {
         setRecipient(response.data.data);
-        setFormData(prev => ({ 
-            ...prev, 
-            manual_account_name: response.data.data.account_holder_name,
-            ...(accNum ? { account_number: accNum } : {})
-        }));
+        if (transferType === 'internal') {
+            setFormData(prev => ({
+                ...prev,
+                manual_account_name: response.data.data.account_holder_name,
+                ...(accNum ? { account_number: accNum } : {})
+            }));
+        }
       } else {
         // Only show error for internal transfers
         if (transferType === 'internal') {
             toast.error(response.data.message);
         }
         setRecipient(null);
-        if (transferType === 'external' && formData.bank_id && formData.bank_id !== 'other') {
-            setFormData(prev => ({ ...prev, manual_account_name: user?.full_name || '' }));
-        }
       }
     } catch (e) {
         if (transferType === 'internal') {
             toast.error('Could not find account');
-        }
-        if (transferType === 'external' && formData.bank_id && formData.bank_id !== 'other') {
-            setFormData(prev => ({ ...prev, manual_account_name: user?.full_name || '' }));
         }
     } finally {
       setLoading(false);
@@ -279,7 +275,6 @@ const SendMoney = () => {
                     value={formData.manual_account_name}
                     onChange={(e) => setFormData({...formData, manual_account_name: e.target.value})}
                     required
-                    readOnly={formData.bank_id && formData.bank_id !== 'other'}
                 />
             )}
 

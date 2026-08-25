@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import MobileNav from './MobileNav';
 import ChatBot from '../ui/ChatBot';
+import SuspendedAccountModal from '../ui/SuspendedAccountModal';
 import { useState } from 'react';
 
 const AppLayout = ({ children }) => {
@@ -12,14 +13,17 @@ const AppLayout = ({ children }) => {
 
   if (!user) return <>{children}</>;
 
+  const isSuspended = user?.status === 'suspended' || user?.account_status === 'suspended';
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 relative">
+      {isSuspended && <SuspendedAccountModal />}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar
-  sidebarOpen={sidebarOpen}
-  onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-/>
+          sidebarOpen={sidebarOpen}
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+        />
 
         <main className="p-4 md:p-8 pb-24 md:pb-8">
           {children}

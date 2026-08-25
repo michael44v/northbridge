@@ -23,6 +23,7 @@ import SavingsGoals from './pages/savings/SavingsGoals';
 import FixedDeposits from './pages/savings/FixedDeposits';
 import ProfileSettings from './pages/profile/ProfileSettings';
 import ChangePIN from './pages/profile/ChangePIN';
+import VintageLandingPage from './pages/VintageLandingPage';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -87,8 +88,8 @@ const App = () => {
             <Route path="aml" element={<AMLQueue />} />
           </Route>
 
-          {/* Default Redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Root Landing Page */}
+          <Route path="/" element={<VintageLandingPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

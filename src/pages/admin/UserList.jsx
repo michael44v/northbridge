@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { formatUSD } from '../../utils/formatCurrency';
-import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X } from 'lucide-react';
+import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X, UserPlus } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
-import SeedTransactions, { defaultSeedTransactions } from './SeedTransactions';
+import SeedTransactions from './SeedTransactions';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -14,8 +14,30 @@ const UserList = () => {
 
   // Modals state
   const [activeUser, setActiveUser] = useState(null);
-  const [modalType, setModalType] = useState(null); // 'edit_full', 'seed_tx', 'balance', 'message', 'status', 'tier'
+  const [modalType, setModalType] = useState(null); // 'edit_full', 'create_user', 'seed_tx', 'balance', 'message', 'status', 'tier'
   const [formData, setFormData] = useState({ amount: '', type: 'credit', narration: '', title: '', message: '', status: '', tier: '' });
+
+  // Create User state
+  const [createForm, setCreateForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    password: '',
+    account_number: '',
+    balance: '0.00',
+    ledger_balance: '0.00',
+    currency: 'GBP',
+    swift_code: 'STRCGB2L',
+    routing_code: '10-20-30',
+    kyc_tier: '2',
+    transfer_limit: '200000.00',
+    account_type: 'Savings Account',
+    occupation: '',
+    dob: '',
+    sex: 'Male',
+    state: '',
+    zipcode: ''
+  });
 
   // Comprehensive Edit User state
   const [userEditForm, setUserEditForm] = useState({
@@ -102,6 +124,25 @@ const UserList = () => {
         toast.success('Picture uploaded and updated');
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await api.post('?action=admin_create_user', createForm);
+      if (res.data.status === 'success') {
+        toast.success(res.data.message || 'User created successfully!');
+        setModalType(null);
+        fetchUsers();
+      } else {
+        toast.error(res.data.message || 'Failed to create user account');
+      }
+    } catch (err) {
+      toast.error('Failed to create user account');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -228,15 +269,45 @@ const UserList = () => {
           <h1 className="text-2xl font-bold text-chase-navy">Manage Users</h1>
           <p className="text-xs text-gray-500">Create, edit, seed transactions and manage bank users.</p>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by name, email or account..."
-            className="pl-10 pr-4 py-2 bg-white border border-chase-border rounded-lg outline-none focus:border-chase-blue w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by name, email or account..."
+              className="pl-10 pr-4 py-2 bg-white border border-chase-border rounded-lg outline-none focus:border-chase-blue w-full text-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => {
+              setCreateForm({
+                full_name: '',
+                email: '',
+                phone: '',
+                password: '',
+                account_number: '',
+                balance: '0.00',
+                ledger_balance: '0.00',
+                currency: 'GBP',
+                swift_code: 'STRCGB2L',
+                routing_code: '10-20-30',
+                kyc_tier: '2',
+                transfer_limit: '200000.00',
+                account_type: 'Savings Account',
+                occupation: '',
+                dob: '',
+                sex: 'Male',
+                state: '',
+                zipcode: ''
+              });
+              setModalType('create_user');
+            }}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-chase-blue hover:bg-chase-navy text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+          >
+            <UserPlus size={18} /> Create Account / User
+          </button>
         </div>
       </div>
 
@@ -337,6 +408,186 @@ const UserList = () => {
           </table>
         </div>
       </div>
+
+      {/* Create User / Account Modal */}
+      {modalType === 'create_user' && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-2xl my-8 p-6 shadow-2xl relative border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setModalType(null)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 p-1"
+            >
+              <X size={20} />
+            </button>
+
+            <h2 className="text-xl font-bold text-chase-navy mb-4 flex items-center gap-2">
+              <UserPlus className="text-chase-blue" size={24} /> Create New User Account
+            </h2>
+
+            <form onSubmit={handleCreateUser} className="space-y-4 text-left">
+              {/* Required Credentials */}
+              <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-chase-blue">Account Credentials</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Alex Logan"
+                      className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                      value={createForm.full_name}
+                      onChange={e => setCreateForm({ ...createForm, full_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. alex@example.com"
+                      className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                      value={createForm.email}
+                      onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Phone Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. +44 7123 456789"
+                      className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                      value={createForm.phone}
+                      onChange={e => setCreateForm({ ...createForm, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Initial Password *</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Password"
+                      className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                      value={createForm.password}
+                      onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Details & Balances */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Account Number (Leave blank for auto-gen)</label>
+                  <input
+                    type="text"
+                    placeholder="Auto-generated 10-digit number"
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm font-mono outline-none focus:border-chase-blue"
+                    value={createForm.account_number}
+                    onChange={e => setCreateForm({ ...createForm, account_number: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Account Type</label>
+                  <select
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                    value={createForm.account_type}
+                    onChange={e => setCreateForm({ ...createForm, account_type: e.target.value })}
+                  >
+                    <option value="Savings Account">Savings Account</option>
+                    <option value="Checking Account">Checking Account</option>
+                    <option value="Corporate Account">Corporate Account</option>
+                    <option value="Investment Account">Investment Account</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Starting Balance</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm font-bold font-mono outline-none focus:border-chase-blue"
+                    value={createForm.balance}
+                    onChange={e => setCreateForm({ ...createForm, balance: e.target.value, ledger_balance: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Currency</label>
+                  <select
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm font-bold outline-none focus:border-chase-blue"
+                    value={createForm.currency}
+                    onChange={e => setCreateForm({ ...createForm, currency: e.target.value })}
+                  >
+                    <option value="GBP">GBP (£)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="CAD">CAD ($)</option>
+                    <option value="AUD">AUD ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">KYC Tier</label>
+                  <select
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue font-bold"
+                    value={createForm.kyc_tier}
+                    onChange={e => setCreateForm({ ...createForm, kyc_tier: e.target.value })}
+                  >
+                    <option value="0">Tier 0 (Unverified)</option>
+                    <option value="1">Tier 1 (Basic)</option>
+                    <option value="2">Tier 2 (Verified)</option>
+                    <option value="3">Tier 3 (VIP)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Location & Personal Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Occupation</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Engineer contractor"
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                    value={createForm.occupation}
+                    onChange={e => setCreateForm({ ...createForm, occupation: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-chase-navy uppercase mb-1">Date of Birth</label>
+                  <input
+                    type="text"
+                    placeholder="DD/MM/YYYY"
+                    className="w-full p-2.5 bg-white border border-chase-border rounded-lg text-sm outline-none focus:border-chase-blue"
+                    value={createForm.dob}
+                    onChange={e => setCreateForm({ ...createForm, dob: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-chase-border">
+                <button
+                  type="button"
+                  onClick={() => setModalType(null)}
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-xl font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-3 px-4 bg-chase-blue hover:bg-chase-navy text-white rounded-xl font-bold transition-colors shadow-lg"
+                >
+                  {submitting ? 'Creating Account...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Comprehensive Edit User Account Modal */}
       {modalType === 'edit_full' && (
