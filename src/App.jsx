@@ -29,6 +29,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserList from './pages/admin/UserList';
 import SeedTransactions from './pages/admin/SeedTransactions';
+import AdminLogin from './pages/admin/AdminLogin';
 import KYCQueue from './pages/admin/KYCQueue';
 import AMLQueue from './pages/admin/AMLQueue';
 import TransactionMonitor from './pages/admin/TransactionMonitor';
@@ -70,6 +71,9 @@ const App = () => {
           <Route path="/savings/fixed" element={<ProtectedRoute><FixedDeposits /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           <Route path="/profile/pin" element={<ProtectedRoute><ChangePIN /></ProtectedRoute>} />
+
+          {/* Admin Public Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
