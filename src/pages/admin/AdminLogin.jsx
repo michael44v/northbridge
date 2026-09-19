@@ -139,7 +139,7 @@ const AdminLogin = () => {
               label="Admin Email Address"
               type="email"
               name="email"
-              placeholder="admin@northbridgebank.com"
+              placeholder="admin@meridiantrustbank.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
             />

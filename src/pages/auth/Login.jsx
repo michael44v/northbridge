@@ -4,27 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { ArrowRight, ShieldCheck, Zap, Globe } from 'lucide-react';
 import GlobeBackground from '../../components/ui/Globebackground';
+import MeridianLogo from '../../components/ui/MeridianLogo';
 
 /* ── Shared sub-components ───────────────────────────────────────────── */
 const LogoRow = ({ subtitle }) => (
-  <div style={{ textAlign: 'center', marginBottom: '1.5rem', position: 'relative', zIndex: 2 }}>
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
-      <div style={{
-        width: 34, height: 34,
-        background: 'linear-gradient(135deg, #117ACA, #0A2D5A)',
-        borderRadius: 9,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          <polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      <span style={{ fontFamily: '"DM Sans", sans-serif', fontWeight: 800, fontSize: 19, color: '#0A2D5A', letterSpacing: '-0.4px' }}>
-        NorthBridge
-      </span>
-    </div>
-    <p style={{ fontSize: 10, color: '#6B7A99', margin: 0, fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+  <div style={{ textAlign: 'center', marginBottom: '1.5rem', position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <MeridianLogo variant="dark" />
+    <p style={{ fontSize: 10, color: '#6B7A99', marginTop: 6, fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
       {subtitle}
     </p>
   </div>
@@ -135,11 +121,11 @@ const Login = () => {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'rgba(17,122,202,0.10)', border: '1px solid rgba(17,122,202,0.20)',
+            background: 'rgba(19,78,50,0.10)', border: '1px solid rgba(19,78,50,0.20)',
             borderRadius: 100, padding: '5px 14px',
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#117ACA', boxShadow: '0 0 6px #117ACA' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#117ACA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#134e32', boxShadow: '0 0 6px #134e32' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#134e32', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               USD Banking Network
             </span>
           </div>
@@ -160,11 +146,11 @@ const Login = () => {
           padding: '26px 22px 22px',
           boxShadow: '0 20px 60px rgba(10,45,90,0.10), 0 1px 0 rgba(255,255,255,0.8) inset',
         }}>
-          <h1 style={{ fontSize: 25, fontWeight: 800, color: '#0A2D5A', margin: '0 0 3px', letterSpacing: '-0.4px' }}>
+          <h1 style={{ fontSize: 25, fontWeight: 800, color: '#0b2b1a', margin: '0 0 3px', letterSpacing: '-0.4px' }}>
             Welcome back
           </h1>
           <p style={{ fontSize: 13, color: '#7A8AA8', margin: '0 0 22px' }}>
-            Sign in to your NorthBridge account
+            Sign in to your Meridian Trust account
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -188,7 +174,7 @@ const Login = () => {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18, marginTop: -4 }}>
-              <Link to="/forgot-password" style={{ fontSize: 12, fontWeight: 700, color: '#117ACA', textDecoration: 'none' }}>
+              <Link to="/forgot-password" style={{ fontSize: 12, fontWeight: 700, color: '#134e32', textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </div>
@@ -198,12 +184,12 @@ const Login = () => {
               disabled={loading}
               style={{
                 width: '100%', padding: '15px',
-                background: loading ? '#6BA5D4' : 'linear-gradient(135deg, #117ACA 0%, #0A2D5A 100%)',
-                color: 'white', border: 'none', borderRadius: 13,
+                background: loading ? '#2c6b4a' : 'linear-gradient(135deg, #134e32 0%, #0b2b1a 100%)',
+                color: '#fdfbf7', border: 'none', borderRadius: 13,
                 fontSize: 15, fontWeight: 800,
                 cursor: loading ? 'default' : 'pointer',
                 letterSpacing: '0.02em',
-                boxShadow: '0 8px 24px rgba(17,122,202,0.35)',
+                boxShadow: '0 8px 24px rgba(11,43,26,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 transition: 'opacity 0.2s, transform 0.15s',
                 transform: loading ? 'scale(0.98)' : 'scale(1)',

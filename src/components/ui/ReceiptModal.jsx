@@ -58,7 +58,7 @@ const ReceiptModal = ({ transaction, onClose }) => {
   // ── WhatsApp share ──────────────────────────────────────────────────────────
   const handleShareWhatsApp = () => {
     const text = [
-      'Transaction Receipt — NorthBridge Bank',
+      'Transaction Receipt — Meridian Trust Bank',
       '',
       `From : ${senderName} (${senderAcct || 'N/A'})`,
       `To   : ${recipientName} (${recipientAcct || 'N/A'})`,
@@ -153,7 +153,7 @@ const ReceiptModal = ({ transaction, onClose }) => {
                   transform: 'rotate(-30deg)',
                   padding: '6px 0', userSelect: 'none',
                 }}>
-                  NORTH BRIDGE BANK &nbsp;&nbsp; NORTH BRIDGE BANK &nbsp;&nbsp; NORTH BRIDGE BANK
+                  MERIDIAN TRUST BANK &nbsp;&nbsp; MERIDIAN TRUST BANK &nbsp;&nbsp; MERIDIAN TRUST BANK
                 </span>
               ))}
             </div>
@@ -174,7 +174,7 @@ const ReceiptModal = ({ transaction, onClose }) => {
                         fontFamily: "'Playfair Display', serif",
                         fontSize: 14, fontWeight: 700,
                         letterSpacing: '2.5px', color: '#fff',
-                      }}>NORTH BRIDGE</span>
+                      }}>MERIDIAN TRUST</span>
                     )}
                     <div style={{
                       width: 22, height: 22, border: '1.5px solid rgba(255,255,255,0.45)',
@@ -293,10 +293,10 @@ const ReceiptModal = ({ transaction, onClose }) => {
             <div className="flex items-center justify-between px-5 py-2" style={{ background: s.navy }}>
               <span style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.55)', letterSpacing: '1px' }}>
                 <ShieldCheck size={11} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} />
-                NBB SECURE
+                MTB SECURE
               </span>
               <span style={{ fontSize: 7.5, color: s.gold, letterSpacing: '1px' }}>
-                northbridgebank.com
+                meridiantrustbank.com
               </span>
             </div>
           </div>
