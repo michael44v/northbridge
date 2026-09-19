@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #fdfbf7;
+    color: #1c241f;
+  }
+}
+
+/* Custom Vintage Styling Details */
+.vintage-card {
+  background: #ffffff;
+  border: 1px solid #e2dad0;
+  box-shadow: 0 4px 20px -2px rgba(11, 43, 26, 0.05);
+  border-radius: 0.75rem;
+}
+
+.vintage-card-header {
+  border-bottom: 1px solid #ece5dd;
+  background: linear-gradient(to right, #fbfaf6, #f5efe6);
+}
+
+.vintage-button-gold {
+  background: linear-gradient(135deg, #e5c365 0%, #c59b27 100%);
+  color: #0b2b1a;
+  font-weight: 600;
+  border: 1px solid #b88e1e;
+  transition: all 0.2s ease;
+}
+
+.vintage-button-gold:hover {
+  background: linear-gradient(135deg, #f0cf75 0%, #d4af37 100%);
+  box-shadow: 0 4px 12px rgba(197, 155, 39, 0.3);
+}
+
+.vintage-button-green {
+  background: linear-gradient(135deg, #134e32 0%, #0b2b1a 100%);
+  color: #fdfbf7;
+  font-weight: 600;
+  border: 1px solid #071d12;
+  transition: all 0.2s ease;
+}
+
+.vintage-button-green:hover {
+  background: linear-gradient(135deg, #18613e 0%, #0f3823 100%);
+  box-shadow: 0 4px 12px rgba(11, 43, 26, 0.25);
+}

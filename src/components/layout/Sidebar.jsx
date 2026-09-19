@@ -13,6 +13,7 @@ import {
   LogOut,
   X
 } from 'lucide-react';
+import MeridianLogo from '../ui/MeridianLogo';
 
 const Sidebar = ({ open, onClose }) => {
   const { logout } = useAuth();
@@ -39,13 +40,13 @@ const Sidebar = ({ open, onClose }) => {
       )}
 
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-chase-navy text-white flex flex-col
+        fixed inset-y-0 left-0 z-50 w-64 bg-chase-navy text-white flex flex-col border-r border-amber-900/30
         transform transition-transform duration-300 ease-in-out
         md:relative md:transform-none
         ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="p-6 text-xl font-bold border-b border-white/10 flex items-center justify-between">
-          <span>NorthBridge Bank</span>
+        <div className="p-5 border-b border-amber-500/20 flex items-center justify-between">
+          <MeridianLogo variant="light" />
           <button
             onClick={onClose}
             className="md:hidden p-1 hover:bg-white/10 rounded-lg transition-colors"

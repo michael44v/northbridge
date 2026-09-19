@@ -4,27 +4,13 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { ArrowRight, UserCheck, ShieldCheck, CreditCard } from 'lucide-react';
 import GlobeBackground from '../../components/ui/Globebackground';
+import MeridianLogo from '../../components/ui/MeridianLogo';
 
 /* ── Shared sub-components ───────────────────────────────────────────── */
 const LogoRow = ({ subtitle }) => (
-  <div style={{ textAlign: 'center', marginBottom: '1.25rem', position: 'relative', zIndex: 2 }}>
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
-      <div style={{
-        width: 34, height: 34,
-        background: 'linear-gradient(135deg, #117ACA, #0A2D5A)',
-        borderRadius: 9,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          <polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      <span style={{ fontFamily: '"DM Sans", sans-serif', fontWeight: 800, fontSize: 19, color: '#0A2D5A', letterSpacing: '-0.4px' }}>
-        NorthBridge Bank
-      </span>
-    </div>
-    <p style={{ fontSize: 10, color: '#6B7A99', margin: 0, fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+  <div style={{ textAlign: 'center', marginBottom: '1.25rem', position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <MeridianLogo variant="dark" />
+    <p style={{ fontSize: 10, color: '#6B7A99', marginTop: 6, fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
       {subtitle}
     </p>
   </div>
@@ -263,7 +249,7 @@ const Register = () => {
                     <Link to="/terms" style={{ color: '#117ACA', fontWeight: 700 }}>Terms of Service</Link>
                     {' '}and{' '}
                     <Link to="/privacy" style={{ color: '#117ACA', fontWeight: 700 }}>Privacy Policy</Link>
-                    , and consent to NorthBridge verifying my identity.
+                    , and consent to Meridian Trust verifying my identity.
                   </span>
                 </div>
 
