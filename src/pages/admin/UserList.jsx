@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { formatUSD } from '../../utils/formatCurrency';
-import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X, UserPlus } from 'lucide-react';
+import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X, UserPlus, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -400,6 +400,13 @@ const UserList = () => {
                       >
                         {u.status === 'active' ? <Ban size={18} /> : <CheckCircle size={18} />}
                       </button>
+                      <button
+                        onClick={() => { setActiveUser(u); setModalType('delete'); }}
+                        className="p-2 hover:bg-red-100 text-red-700 rounded-lg transition-colors"
+                        title="Delete User"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -585,6 +592,33 @@ const UserList = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {modalType === 'delete' && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl text-center">
+            <div className="mx-auto w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-chase-navy mb-2">
+              Delete User Account?
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete <strong>{activeUser?.full_name}</strong>'s account? This will mark the user account as closed.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={() => setModalType(null)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                loading={submitting}
+                onClick={() => handleUpdateStatus('closed')}
+              >
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
       )}
