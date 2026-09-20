@@ -176,9 +176,6 @@ const ProfileSettings = () => {
               {profile.state && <p><span className="text-white/50">Location:</span> {profile.state}{profile.zipcode ? `, ${profile.zipcode}` : ''}</p>}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-xs text-white/40">Member since {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
-            </div>
           </div>
         </div>
       </div>

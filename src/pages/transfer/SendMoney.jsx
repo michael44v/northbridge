@@ -28,7 +28,6 @@ const SendMoney = () => {
     amount: '',
     narration: '',
     pin: '',
-    confirm_name: '',
     bank_id: '',
     manual_bank_name: '',
     manual_account_name: ''
@@ -71,7 +70,6 @@ const SendMoney = () => {
         amount: '',
         narration: '',
         pin: '',
-        confirm_name: '',
         bank_id: '',
         manual_bank_name: '',
         manual_account_name: ''
@@ -148,18 +146,7 @@ const SendMoney = () => {
         }
     }
 
-    if (step === 1 && recipient) {
-      if (parseFloat(formData.amount) > 200000) {
-        return setStep(1.5); // Large amount confirmation step
-      }
-      return setStep(2);
-    }
-
-    if (step === 1.5) {
-      if (formData.confirm_name.trim().toLowerCase() !== recipient.account_holder_name.toLowerCase()) {
-        toast.error('Account name does not match');
-        return;
-      }
+    if (step === 1) {
       return setStep(2);
     }
 
@@ -308,29 +295,6 @@ const SendMoney = () => {
           </div>
         )}
 
-        {step === 1.5 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 space-y-2">
-              <p className="font-bold">High Value Transfer Confirmation</p>
-              <p className="text-sm">You are transferring over {formatUSD(200000)}. To prevent errors, please type the recipient's full name exactly as it appears below.</p>
-              <p className="font-mono bg-white/50 p-2 rounded border border-amber-100 mt-2 text-center text-lg">{recipient?.account_holder_name}</p>
-            </div>
-
-            <Input
-              label="Confirm Recipient Name"
-              placeholder="Type the name exactly as shown"
-              value={formData.confirm_name}
-              onChange={(e) => setFormData({ ...formData, confirm_name: e.target.value })}
-              required
-              autoFocus
-            />
-
-            <div className="flex gap-4">
-              <Button variant="secondary" onClick={() => setStep(1)} className="flex-1">Back</Button>
-              <Button type="submit" className="flex-[2] w-full">Verify & Continue</Button>
-            </div>
-          </form>
-        )}
 
         {step === 2 && (
           <form onSubmit={handleSubmit} className="space-y-6">

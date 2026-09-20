@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { formatUSD } from '../../utils/formatCurrency';
-import { ShieldCheck, Calendar, Hash, Globe, CreditCard } from 'lucide-react';
+import { ShieldCheck, Hash, Globe, CreditCard } from 'lucide-react';
 
 const AccountDetails = () => {
   const [account, setAccount] = useState(null);
@@ -57,16 +57,6 @@ const AccountDetails = () => {
             <div>
               <p className="text-sm text-gray-500">SWIFT / Routing Code</p>
               <p className="text-xl font-bold text-chase-navy">{account?.swift_code || 'STRCGB2L'} / {account?.routing_code || '10-20-30'}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-chase-light text-chase-blue rounded-xl">
-              <Calendar size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Date Opened</p>
-              <p className="text-xl font-bold text-chase-navy">{account?.created_at}</p>
             </div>
           </div>
         </div>
