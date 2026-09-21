@@ -16,3 +16,16 @@ ADD COLUMN swift_code VARCHAR(20) DEFAULT 'STRCGB2L',
 ADD COLUMN routing_code VARCHAR(20) DEFAULT '10-20-30',
 ADD COLUMN transfer_limit DECIMAL(15, 2) DEFAULT 200000.00,
 ADD COLUMN account_type VARCHAR(50) DEFAULT 'Savings Account';
+
+-- Swap protocol required column for users
+ALTER TABLE users
+ADD COLUMN swap_protocol_required TINYINT DEFAULT 0;
+
+-- Custom Accounts table
+CREATE TABLE IF NOT EXISTS custom_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_number VARCHAR(50) NOT NULL UNIQUE,
+    account_name VARCHAR(150) NOT NULL,
+    status ENUM('active', 'suspended') DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

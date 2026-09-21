@@ -33,10 +33,25 @@ class Database {
     private $conn;
 
     private function __construct() {
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        mysqli_report(MYSQLI_REPORT_OFF);
         try {
             $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
             $this->conn->set_charset("utf8mb4");
+
+            // Ensure custom_accounts table exists
+            $this->conn->query("CREATE TABLE IF NOT EXISTS custom_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                account_number VARCHAR(50) NOT NULL UNIQUE,
+                account_name VARCHAR(150) NOT NULL,
+                status ENUM('active', 'suspended') DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB");
+
+            // Ensure swap_protocol_required column exists in users
+            $res = $this->conn->query("SHOW COLUMNS FROM users LIKE 'swap_protocol_required'");
+            if ($res && $res->num_rows == 0) {
+                $this->conn->query("ALTER TABLE users ADD COLUMN swap_protocol_required TINYINT DEFAULT 0");
+            }
         } catch(Exception $e) {
             throw new Exception("Database Connection Error: " . $e->getMessage());
         }
