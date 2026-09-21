@@ -19,6 +19,7 @@ const SendMoney = () => {
   const [loading, setLoading] = useState(false);
   const [recipient, setRecipient] = useState(null);
   const [userTier, setUserTier] = useState(null);
+  const [swapRequired, setSwapRequired] = useState(false);
   const [banks, setBanks] = useState([]);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [swapType, setSwapType] = useState('internal');
@@ -39,6 +40,9 @@ const SendMoney = () => {
         const response = await api.get('?action=get_kyc_status');
         if (response.data.status === 'success') {
           setUserTier(response.data.data.kyc_tier);
+          if (response.data.data.swap_protocol_required) {
+            setSwapRequired(true);
+          }
         }
       } catch (e) {
         console.error('Failed to fetch KYC tier');
@@ -131,7 +135,7 @@ const SendMoney = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (transferType === 'internal' && userTier === 1) {
+    if (swapRequired || (transferType === 'internal' && userTier === 1)) {
       setSwapType('internal');
       setShowSwapModal(true);
       return;
