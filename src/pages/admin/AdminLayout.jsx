@@ -16,6 +16,7 @@ const AdminLayout = () => {
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, end: true },
     { name: 'Users', path: '/admin/users', icon: Users },
+    { name: 'Custom Accounts', path: '/admin/custom-accounts', icon: ShieldCheck },
     { name: 'KYC Queue', path: '/admin/kyc', icon: ShieldCheck },
     { name: 'Swap Protocols', path: '/admin/swap', icon: RefreshCcw },
     { name: 'Transactions', path: '/admin/transactions', icon: Activity },

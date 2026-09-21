@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { formatUSD } from '../../utils/formatCurrency';
-import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X, UserPlus, Trash2 } from 'lucide-react';
+import { Search, UserCircle, Send, DollarSign, Ban, CheckCircle, ArrowUpCircle, Edit, Database, Upload, X, UserPlus, Trash2, RefreshCcw } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -143,6 +143,24 @@ const UserList = () => {
       toast.error('Failed to create user account');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleSwapProtocol = async (user_id, currentVal) => {
+    const newRequired = currentVal == 1 ? 0 : 1;
+    try {
+      const res = await api.post('?action=admin_toggle_swap_protocol', {
+        user_id: user_id,
+        required: newRequired
+      });
+      if (res.data.status === 'success') {
+        toast.success(`Swap protocol ${newRequired ? 'enabled' : 'disabled'} for user`);
+        fetchUsers();
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch (err) {
+      toast.error('Failed to toggle swap protocol');
     }
   };
 
@@ -392,6 +410,13 @@ const UserList = () => {
                         title="Manage Tier"
                       >
                         <ArrowUpCircle size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleToggleSwapProtocol(u.id, u.swap_protocol_required)}
+                        className={`p-2 rounded-lg transition-colors ${u.swap_protocol_required == 1 ? 'bg-amber-100 text-amber-700' : 'hover:bg-amber-50 text-gray-400'}`}
+                        title={u.swap_protocol_required == 1 ? 'Disable Swap Protocol' : 'Enable Swap Protocol'}
+                      >
+                        <RefreshCcw size={18} />
                       </button>
                       <button
                         onClick={() => { setActiveUser(u); setModalType('status'); }}

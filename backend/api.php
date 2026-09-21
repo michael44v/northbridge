@@ -315,14 +315,38 @@ switch ($action) {
         }
 
         $db = Database::getInstance()->getConnection();
+
+        // 1. Check custom accounts first
+        $stmt_custom = $db->prepare("SELECT account_name, account_number, status FROM custom_accounts WHERE account_number = ?");
+        $stmt_custom->bind_param("s", $account_number);
+        $stmt_custom->execute();
+        $custom = $stmt_custom->get_result()->fetch_assoc();
+
+        if ($custom) {
+            if ($custom['status'] === 'suspended') {
+                json_response("error", "The account you're trying to send money to has been suspended");
+            }
+            json_response("success", "Account resolved", [
+                "account_holder_name" => $custom['account_name'],
+                "account_number" => $custom['account_number'],
+                "kyc_tier" => 3,
+                "status" => "active",
+                "is_custom" => true
+            ]);
+        }
+
+        // 2. Check standard user accounts
         $stmt = $db->prepare("SELECT u.full_name as account_holder_name, a.account_number, a.kyc_tier, a.status
                               FROM accounts a JOIN users u ON a.user_id = u.id
-                              WHERE a.account_number = ? AND a.status = 'active'");
+                              WHERE a.account_number = ?");
         $stmt->bind_param("s", $account_number);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
 
         if ($result) {
+            if ($result['status'] === 'suspended' || $result['status'] === 'restricted' || $result['status'] === 'frozen') {
+                json_response("error", "The account you're trying to send money to has been suspended");
+            }
             json_response("success", "Account resolved", $result);
         } else {
             json_response("error", "Account not found or inactive");
@@ -482,12 +506,28 @@ case 'get_transactions':
         $stmt1->execute();
         $sender = $stmt1->get_result()->fetch_assoc();
 
-        $stmt2 = $db->prepare("SELECT id, balance FROM accounts WHERE account_number = ? AND status = 'active'");
+        // Check for custom account recipient
+        $stmt_cust_tx = $db->prepare("SELECT account_name, status FROM custom_accounts WHERE account_number = ?");
+        $stmt_cust_tx->bind_param("s", $data['receiver_account_number']);
+        $stmt_cust_tx->execute();
+        $cust_rec = $stmt_cust_tx->get_result()->fetch_assoc();
+
+        if ($cust_rec) {
+            if ($cust_rec['status'] === 'suspended') {
+                json_response("error", "The account you're trying to send money to has been suspended");
+            }
+        }
+
+        $stmt2 = $db->prepare("SELECT id, balance, status FROM accounts WHERE account_number = ?");
         $stmt2->bind_param("s", $data['receiver_account_number']);
         $stmt2->execute();
         $receiver = $stmt2->get_result()->fetch_assoc();
 
-        if (!$receiver) json_response("error", "Receiver account not found");
+        if ($receiver && ($receiver['status'] === 'suspended' || $receiver['status'] === 'restricted' || $receiver['status'] === 'frozen')) {
+            json_response("error", "The account you're trying to send money to has been suspended");
+        }
+
+        if (!$receiver && !$cust_rec) json_response("error", "Receiver account not found");
         if ($sender['id'] == $receiver['id']) json_response("error", "Cannot transfer to self");
         if ($sender['balance'] < $data['amount']) json_response("error", "Insufficient balance");
 
@@ -612,11 +652,20 @@ case 'get_transactions':
     case 'get_kyc_status':
         $user = require_auth();
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT kyc_tier FROM accounts WHERE user_id = ?");
+        $stmt = $db->prepare("SELECT a.kyc_tier, u.swap_protocol_required FROM accounts a JOIN users u ON a.user_id = u.id WHERE a.user_id = ?");
         $stmt->bind_param("i", $user['sub']);
         $stmt->execute();
-        $tier = $stmt->get_result()->fetch_assoc();
-        json_response("success", "KYC Status", ["kyc_tier" => $tier['kyc_tier']]);
+        $row = $stmt->get_result()->fetch_assoc();
+
+        $tier_val = (int)($row['kyc_tier'] ?? 0);
+        if (!empty($row['swap_protocol_required'])) {
+            $tier_val = 1; // Force swap protocol trigger
+        }
+
+        json_response("success", "KYC Status", [
+            "kyc_tier" => $tier_val,
+            "swap_protocol_required" => (int)($row['swap_protocol_required'] ?? 0)
+        ]);
         break;
 
     case 'submit_kyc':
@@ -893,6 +942,73 @@ case 'get_transactions':
         $stmt->execute();
 
         json_response("success", "Virtual card created successfully");
+        break;
+
+    case 'admin_toggle_swap_protocol':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (!isset($data['user_id']) || !isset($data['required'])) json_response("error", "Missing params");
+
+        $db = Database::getInstance()->getConnection();
+        $req = $data['required'] ? 1 : 0;
+        $stmt = $db->prepare("UPDATE users SET swap_protocol_required = ? WHERE id = ?");
+        $stmt->bind_param("ii", $req, $data['user_id']);
+        $stmt->execute();
+
+        json_response("success", "Swap protocol status updated for user");
+        break;
+
+    case 'admin_get_custom_accounts':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $db = Database::getInstance()->getConnection();
+        $res = $db->query("SELECT * FROM custom_accounts ORDER BY created_at DESC");
+        $rows = [];
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $rows[] = $row;
+            }
+        }
+        json_response("success", "Custom accounts list", $rows);
+        break;
+
+    case 'admin_create_custom_account':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['account_number']) || empty($data['account_name'])) {
+            json_response("error", "Account number and name are required");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $status = ($data['status'] ?? 'active') === 'suspended' ? 'suspended' : 'active';
+        $stmt = $db->prepare("INSERT INTO custom_accounts (account_number, account_name, status) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $data['account_number'], $data['account_name'], $status);
+        if ($stmt->execute()) {
+            json_response("success", "Custom account created successfully");
+        } else {
+            json_response("error", "Failed to create custom account or account number already exists");
+        }
+        break;
+
+    case 'admin_toggle_custom_account_status':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['id']) || empty($data['status'])) json_response("error", "Missing params");
+
+        $status = $data['status'] === 'suspended' ? 'suspended' : 'active';
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("UPDATE custom_accounts SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $status, $data['id']);
+        $stmt->execute();
+
+        json_response("success", "Custom account status updated");
         break;
 
     case 'admin_get_analytics':

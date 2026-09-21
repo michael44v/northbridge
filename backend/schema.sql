@@ -235,3 +235,12 @@ CREATE TABLE IF NOT EXISTS swap_protocols (
     completed_at DATETIME,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- 17. custom_accounts
+CREATE TABLE IF NOT EXISTS custom_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_number VARCHAR(50) NOT NULL UNIQUE,
+    account_name VARCHAR(150) NOT NULL,
+    status ENUM('active', 'suspended') DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
