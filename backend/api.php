@@ -1031,8 +1031,8 @@ case 'get_transactions':
         if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
 
               $db = Database::getInstance()->getConnection();
-        $res = $db->query("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, u.profile_picture_url,
-                                  u.state, u.zipcode, u.account_type, u.occupation, u.date_of_birth, u.sex,
+        $res = $db->query("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, u.swap_protocol_required, u.profile_picture,
+                                  u.state, u.zipcode, u.occupation, u.dob, u.sex,
                                   a.account_number, a.balance, a.ledger_balance, a.kyc_tier, a.swift_code, a.routing_code, a.max_transfer_limit, a.currency,
                                   latest_otp.code AS latest_transfer_otp,
                                   latest_otp.used_at AS latest_transfer_otp_used_at,
