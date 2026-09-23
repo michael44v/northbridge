@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     pin_hash VARCHAR(255),
     role ENUM('user', 'admin', 'super_admin') DEFAULT 'user',
     status ENUM('active', 'suspended', 'frozen', 'closed') DEFAULT 'active',
+    swap_protocol_required TINYINT DEFAULT 0,
     email_verified_at DATETIME,
     phone_verified_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

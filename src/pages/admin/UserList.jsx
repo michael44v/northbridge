@@ -106,7 +106,8 @@ const UserList = () => {
       occupation: u.occupation || '',
       dob: u.dob || '',
       sex: u.sex || 'Male',
-      currency: u.currency || 'GBP'
+      currency: u.currency || 'GBP',
+      swap_protocol_required: u.swap_protocol_required || 0
     });
     setModalType('edit_full');
   };
@@ -412,11 +413,23 @@ const UserList = () => {
                         <ArrowUpCircle size={18} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleToggleSwapProtocol(u.id, u.swap_protocol_required)}
-                        className={`p-2 rounded-lg transition-colors ${u.swap_protocol_required == 1 ? 'bg-amber-100 text-amber-700' : 'hover:bg-amber-50 text-gray-400'}`}
+                        className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                         title={u.swap_protocol_required == 1 ? 'Disable Swap Protocol' : 'Enable Swap Protocol'}
                       >
-                        <RefreshCcw size={18} />
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase hidden lg:inline">Swap Protocol</span>
+                        <div
+                          className={`w-9 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-colors duration-200 ${
+                            u.swap_protocol_required == 1 ? 'bg-amber-500' : 'bg-gray-300'
+                          }`}
+                        >
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                              u.swap_protocol_required == 1 ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </div>
                       </button>
                       <button
                         onClick={() => { setActiveUser(u); setModalType('status'); }}
@@ -823,6 +836,31 @@ const UserList = () => {
                     onChange={e => setUserEditForm({ ...userEditForm, transfer_limit: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* Swap Protocol Toggle Switch */}
+              <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-amber-900 uppercase">Swap Protocol Required</p>
+                  <p className="text-xs text-amber-700">Require USDT swap protocol authentication before sending transfers</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const newRequired = userEditForm.swap_protocol_required == 1 ? 0 : 1;
+                    setUserEditForm(prev => ({ ...prev, swap_protocol_required: newRequired }));
+                    await handleToggleSwapProtocol(userEditForm.user_id, userEditForm.swap_protocol_required);
+                  }}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ${
+                    userEditForm.swap_protocol_required == 1 ? 'bg-amber-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      userEditForm.swap_protocol_required == 1 ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
               {/* Location & Details */}
