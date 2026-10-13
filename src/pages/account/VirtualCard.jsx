@@ -4,9 +4,11 @@ import VirtualCardUI from '../../components/cards/VirtualCardUI';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
-import { Lock, Unlock, Settings2, Plus, CreditCard, ShieldCheck } from 'lucide-react';
+import { Lock, Unlock, Settings2, Plus, CreditCard, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const VirtualCardPage = () => {
+  const navigate = useNavigate();
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -92,7 +94,7 @@ const VirtualCardPage = () => {
           <CreditCard size={48} />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-chase-navy">Virtual USD Visa</h1>
+          <h1 className="text-3xl font-black text-chase-navy">Virtual USD Card</h1>
           <p className="text-gray-500 mt-2">Get an instant virtual card for secure online global payments.</p>
         </div>
 
@@ -112,9 +114,14 @@ const VirtualCardPage = () => {
             </div>
           </div>
 
-          <Button onClick={handleCreateCard} loading={creating} className="w-full py-4 text-lg font-bold">
-            Create Virtual Card
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button onClick={handleCreateCard} loading={creating} className="flex-1 py-4 text-lg font-bold">
+              Create Virtual Card
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/account/deposit')} className="flex-1 py-4 text-lg font-bold border-amber-500 text-amber-700 hover:bg-amber-50">
+              <ArrowUpRight size={20} className="mr-2" /> Add Funds
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -122,9 +129,14 @@ const VirtualCardPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold text-chase-navy">Virtual USD Card</h1>
-        <p className="text-gray-500">Secure online payments anywhere Visa is accepted</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-chase-navy">Virtual USD Card</h1>
+          <p className="text-gray-500">Secure online payments anywhere Visa or Mastercard is accepted</p>
+        </div>
+        <Button onClick={() => navigate('/account/deposit')} className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md">
+          <ArrowUpRight size={18} className="mr-2" /> Add Funds
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
@@ -159,6 +171,17 @@ const VirtualCardPage = () => {
           </h3>
 
           <div className="space-y-4">
+            <div
+              onClick={() => navigate('/account/deposit')}
+              className="flex justify-between items-center p-4 border border-amber-200 bg-amber-50/50 rounded-xl hover:bg-amber-100/50 transition-colors cursor-pointer"
+            >
+              <div>
+                <p className="font-bold text-amber-900">Add Funds to Account</p>
+                <p className="text-sm text-amber-700">Deposit via BTC Crypto or Card</p>
+              </div>
+              <ArrowUpRight size={20} className="text-amber-700" />
+            </div>
+
             <div className="flex justify-between items-center p-4 border border-chase-border rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
               <div>
                 <p className="font-bold text-chase-navy">Spending Limit</p>
