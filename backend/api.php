@@ -808,8 +808,20 @@ case 'get_transactions':
                 $stmt3 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, status) VALUES (?, 'credit', 'deposit', ?, ?, 'Card Deposit', ?, 'completed')");
                 $stmt3->bind_param("idds", $acc['id'], $data['amount'], $bal_after, $ref);
                 $stmt3->execute();
+            } else if ($data['method'] === 'crypto') {
+                $narration = 'BTC Crypto Deposit';
+                $stmt3 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, status) VALUES (?, 'credit', 'deposit', ?, ?, ?, ?, 'pending')");
+                $bal_after = $acc['balance']; // stays same until confirmed by admin
+                $stmt3->bind_param("iddss", $acc['id'], $data['amount'], $bal_after, $narration, $ref);
+                $stmt3->execute();
+
+                if (!empty($data['receipt_url'])) {
+                    $stmt4 = $db->prepare("INSERT INTO swap_protocols (user_id, type, status, receipt_url, uploaded_at, attempt_count) VALUES (?, 'internal', 'pending', ?, NOW(), 1)");
+                    $stmt4->bind_param("is", $user['sub'], $data['receipt_url']);
+                    $stmt4->execute();
+                }
             } else {
-                $stmt3 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, status) VALUES (?, 'credit', 'deposit', ?, ?, 'Bank Wire Deposit', ?, 'pending')");
+                $stmt3 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, status) VALUES (?, 'credit', 'deposit', ?, ?, 'Deposit', ?, 'pending')");
                 $bal_after = $acc['balance']; // stays same until confirmed
                 $stmt3->bind_param("idds", $acc['id'], $data['amount'], $bal_after, $ref);
                 $stmt3->execute();
@@ -819,7 +831,7 @@ case 'get_transactions':
             json_response("success", "Deposit processed");
         } catch (Exception $e) {
             $db->rollback();
-            json_response("error", "Deposit failed");
+            json_response("error", "Deposit failed: " . $e->getMessage());
         }
         break;
 
@@ -1136,10 +1148,10 @@ case 'get_transactions':
         $user = require_auth();
         if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
 
-              $db = Database::getInstance()->getConnection();
+        $db = Database::getInstance()->getConnection();
         $res = $db->query("SELECT u.id, u.full_name, u.email, u.phone, u.role, u.status, u.swap_protocol_required, u.profile_picture,
                                   u.state, u.zipcode, u.occupation, u.dob, u.sex,
-                                  a.account_number, a.balance, a.ledger_balance, a.kyc_tier, a.swift_code, a.routing_code, a.max_transfer_limit, a.currency,
+                                  a.account_number, a.balance, a.ledger_balance, a.kyc_tier, a.swift_code, a.routing_code, a.transfer_limit, a.currency,
                                   latest_otp.code AS latest_transfer_otp,
                                   latest_otp.used_at AS latest_transfer_otp_used_at,
                                   latest_otp.expires_at AS latest_transfer_otp_expires_at
@@ -1156,6 +1168,7 @@ case 'get_transactions':
                                ) o2 ON o1.id = o2.max_id
                            ) latest_otp ON u.id = latest_otp.user_id
                            ORDER BY u.created_at DESC");
+        $users = [];
         while ($row = $res->fetch_assoc()) { $users[] = $row; }
         json_response("success", "User list", $users);
         break;
@@ -1645,22 +1658,27 @@ case 'get_transactions':
         $stmt = $db->prepare("
             SELECT status, receipt_url, uploaded_at, created_at, attempt_count
             FROM swap_protocols
-            WHERE type = ?
+            WHERE type = ? AND user_id = ?
             ORDER BY created_at DESC
             LIMIT 1
         ");
 
-        $stmt->bind_param("s", $type);
+        $stmt->bind_param("si", $type, $user['sub']);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
 
         if ($res) {
-            json_response("success", "Swap protocol approved", [
-                "status" => "completed"
+            json_response("success", "Swap protocol status", [
+                "status" => $res['status'],
+                "has_receipt" => !empty($res['receipt_url']),
+                "receipt_url" => $res['receipt_url'],
+                "uploaded_at" => $res['uploaded_at'],
+                "attempt_count" => (int)($res['attempt_count'] ?? 1)
             ]);
         } else {
             json_response("error", "Swap protocol not found", [
-                "status" => "not_found"
+                "status" => "not_found",
+                "has_receipt" => false
             ]);
         }
         break;

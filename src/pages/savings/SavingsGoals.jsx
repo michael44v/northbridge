@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Button from '../../components/ui/Button';
-import { Target, TrendingUp, Plus, Calendar } from 'lucide-react';
+import { Target, TrendingUp, Plus, Calendar, ArrowUpRight } from 'lucide-react';
 import { formatUSD } from '../../utils/formatCurrency';
+import { useNavigate } from 'react-router-dom';
 
 const SavingsGoals = () => {
+  const navigate = useNavigate();
   const [goals, setGoals] = useState([
     { id: 1, name: 'Emergency Fund', target: 10000, current: 4500, date: 'Dec 2026' },
     { id: 2, name: 'New Car', target: 25000, current: 8000, date: 'May 2027' },
@@ -16,10 +18,16 @@ const SavingsGoals = () => {
           <h1 className="text-3xl font-bold text-chase-navy">Savings Goals</h1>
           <p className="text-gray-500">Plan and save for what matters most</p>
         </div>
-        <Button>
-          <Plus size={18} className="mr-2" />
-          Create Goal
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={() => navigate('/account/deposit')} className="bg-amber-500 hover:bg-amber-600 text-white">
+            <ArrowUpRight size={18} className="mr-1.5" />
+            Add Funds
+          </Button>
+          <Button>
+            <Plus size={18} className="mr-2" />
+            Create Goal
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -59,7 +67,9 @@ const SavingsGoals = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="secondary" className="flex-1">Add Funds</Button>
+                <Button variant="secondary" className="flex-1" onClick={() => navigate('/account/deposit')}>
+                  <ArrowUpRight size={16} className="mr-1" /> Add Funds
+                </Button>
                 <Button variant="ghost" className="flex-1">Manage</Button>
               </div>
             </div>
