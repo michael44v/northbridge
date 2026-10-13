@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../api/axios';
-import { Search, Filter, ArrowUpRight, ArrowDownLeft, Eye } from 'lucide-react';
+import { Search, Filter, ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const TransactionMonitor = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
     fetchTransactions();
@@ -21,6 +23,27 @@ const TransactionMonitor = () => {
       console.error('Failed to fetch transactions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReview = async (txId, action) => {
+    setActionLoading(txId);
+    try {
+      const res = await axios.post('', {
+        transaction_id: txId,
+        action: action
+      }, { params: { action: 'admin_review_transaction' } });
+
+      if (res.data.status === 'success') {
+        toast.success(`Transaction ${action === 'approve' ? 'approved' : 'declined'} successfully`);
+        fetchTransactions();
+      } else {
+        toast.error(res.data.message || 'Action failed');
+      }
+    } catch (err) {
+      toast.error('Failed to review transaction');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -94,12 +117,34 @@ const TransactionMonitor = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                      tx.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {tx.status}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                        tx.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {tx.status}
+                      </span>
+                      {tx.status === 'pending' && (
+                        <div className="flex gap-1 mt-1">
+                          <button
+                            disabled={actionLoading === tx.id}
+                            onClick={() => handleReview(tx.id, 'approve')}
+                            className="p-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            title="Approve Transaction"
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button
+                            disabled={actionLoading === tx.id}
+                            onClick={() => handleReview(tx.id, 'decline')}
+                            className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                            title="Decline Transaction"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-xs text-gray-500">
                     {new Date(tx.created_at).toLocaleDateString()} <br/>

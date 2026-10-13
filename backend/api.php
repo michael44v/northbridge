@@ -384,6 +384,8 @@ case 'get_transactions':
             t.balance_after,
             t.narration,
             t.reference,
+            t.external_bank_name,
+            t.external_account_name,
             t.status,
             t.created_at,
  
@@ -427,11 +429,11 @@ case 'get_transactions':
         if ($row['type'] === 'debit') {
             $row['sender_name']       = $row['own_name'];
             $row['sender_account']    = $row['own_account_number'];
-            $row['recipient_name']    = $row['counterparty_name'];
-            $row['recipient_account'] = $row['counterparty_account_number'];
+            $row['recipient_name']    = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Recipient';
+            $row['recipient_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
         } else {
-            $row['sender_name']       = $row['counterparty_name'];
-            $row['sender_account']    = $row['counterparty_account_number'];
+            $row['sender_name']       = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Sender';
+            $row['sender_account']    = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
             $row['recipient_name']    = $row['own_name'];
             $row['recipient_account'] = $row['own_account_number'];
         }
@@ -601,6 +603,105 @@ case 'get_transactions':
         } catch (Exception $e) {
             $db->rollback();
             json_response("error", "Transfer failed: " . $e->getMessage());
+        }
+        break;
+
+    case 'external_transfer':
+        $user = require_auth();
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['receiver_account_number']) || empty($data['amount']) || empty($data['pin']) || empty($data['manual_account_name'])) {
+            json_response("error", "Missing transfer details");
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        $stmt = $db->prepare("SELECT pin_hash FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user['sub']);
+        $stmt->execute();
+        $u = $stmt->get_result()->fetch_assoc();
+        if (!Security::verifyData($data['pin'], $u['pin_hash'] ?? '')) {
+            json_response("error", "Invalid transaction PIN");
+        }
+
+        $stmt1 = $db->prepare("SELECT id, balance, kyc_tier FROM accounts WHERE user_id = ?");
+        $stmt1->bind_param("i", $user['sub']);
+        $stmt1->execute();
+        $sender = $stmt1->get_result()->fetch_assoc();
+
+        if ($sender['balance'] < $data['amount']) json_response("error", "Insufficient balance");
+
+        // Determine bank name
+        $bank_name = $data['manual_bank_name'] ?? 'External Bank';
+        if (!empty($data['bank_id']) && $data['bank_id'] !== 'other') {
+            // resolve bank_id
+            $bank_id = (int)$data['bank_id'];
+            $banks = [
+                1 => "Industrial and Commercial Bank of China (ICBC)", 2 => "China Construction Bank", 3 => "Agricultural Bank of China", 4 => "Bank of China", 5 => "Sberbank (Russia)",
+                6 => "VTB Bank (Russia)", 7 => "Gazprombank (Russia)", 8 => "Mitsubishi UFJ Financial Group (Japan)", 9 => "Sumitomo Mitsui Financial Group (Japan)", 10 => "Mizuho Financial Group (Japan)",
+                11 => "Bank of Communications (China)", 12 => "Postal Savings Bank of China", 13 => "China Merchants Bank", 14 => "Industrial Bank (China)", 15 => "Shanghai Pudong Development Bank",
+                16 => "China CITIC Bank", 17 => "Alfa-Bank (Russia)", 18 => "Rosselkhozbank (Russian Agricultural Bank)", 19 => "Bank Otkritie (Russia)", 20 => "Tinkoff Bank (Russia)",
+                21 => "State Bank of India", 22 => "HDFC Bank (India)", 23 => "ICICI Bank (India)", 24 => "DBS Bank (Singapore)", 25 => "OCBC Bank (Singapore)", 26 => "United Overseas Bank (Singapore)",
+                27 => "Maybank (Malaysia)", 28 => "CIMB Bank (Malaysia)", 29 => "Public Bank Berhad (Malaysia)", 30 => "Kasikornbank (Thailand)", 31 => "Siam Commercial Bank (Thailand)",
+                32 => "Bangkok Bank (Thailand)", 33 => "Vietcombank (Vietnam)", 34 => "Joint Stock Commercial Bank for Investment and Development of Vietnam (BIDV)", 35 => "Bank Central Asia (Indonesia)",
+                36 => "Bank Mandiri (Indonesia)", 37 => "Bank Rakyat Indonesia", 38 => "Kookmin Bank (South Korea)", 39 => "Shinhan Bank (South Korea)", 40 => "Hana Bank (South Korea)",
+                41 => "Woori Bank (South Korea)", 42 => "Cathay United Bank (Taiwan)", 43 => "CTBC Bank (Taiwan)", 44 => "Bank of Taiwan", 45 => "BDO Unibank (Philippines)",
+                46 => "Metropolitan Bank and Trust Company (Philippines)", 47 => "Bank of the Philippine Islands", 48 => "Habib Bank (Pakistan)", 49 => "National Bank of Pakistan", 50 => "MCB Bank (Pakistan)",
+                51 => "Bank of Ceylon (Sri Lanka)", 52 => "Commercial Bank of Ceylon", 53 => "Sonali Bank (Bangladesh)", 54 => "Islami Bank Bangladesh", 55 => "Promsvyazbank (Russia)",
+                56 => "Raiffeisenbank Russia", 57 => "Sovcombank (Russia)", 58 => "Bank Saint Petersburg (Russia)", 59 => "Ping An Bank (China)", 60 => "Huaxia Bank (China)",
+                61 => "China Minsheng Bank", 62 => "China Everbright Bank", 63 => "Bank of Beijing", 64 => "Bank of Shanghai", 65 => "Bank of Nanjing", 66 => "Bank of Ningbo",
+                67 => "Zheshang Bank (China)", 68 => "Shengjing Bank (China)", 69 => "Bank of Chongqing", 70 => "Bank of Chengdu", 71 => "Resona Holdings (Japan)", 72 => "Fukuoka Financial Group (Japan)",
+                73 => "Chiba Bank (Japan)", 74 => "Bank of Yokohama (Japan)", 75 => "Shizuoka Bank (Japan)", 76 => "Axis Bank (India)", 77 => "Punjab National Bank (India)", 78 => "Bank of Baroda (India)",
+                79 => "Canara Bank (India)", 80 => "Union Bank of India", 81 => "Industrial Bank of Korea", 82 => "Nonghyup Bank (South Korea)", 83 => "Busan Bank (South Korea)", 84 => "Daegu Bank (South Korea)",
+                85 => "Standard Chartered Korea", 86 => "Krung Thai Bank (Thailand)", 87 => "TMBThanachart Bank (Thailand)", 88 => "Bank of Ayudhya (Thailand)", 89 => "RHB Bank (Malaysia)",
+                90 => "AmBank (Malaysia)", 91 => "Hong Leong Bank (Malaysia)", 92 => "Alliance Bank (Malaysia)", 93 => "Bank Negara Indonesia", 94 => "Bank Danamon (Indonesia)",
+                95 => "Bank Permata (Indonesia)", 96 => "Bank Syariah Indonesia", 97 => "VietinBank (Vietnam)", 98 => "Military Commercial Joint Stock Bank (Vietnam)", 99 => "Techcombank (Vietnam)",
+                100 => "Sacombank (Vietnam)", 101 => "Rosbank (Russia)", 102 => "Uralsib Bank (Russia)", 103 => "Bank of Hangzhou (China)", 104 => "Bank of Suzhou (China)", 105 => "Bank of Guiyang (China)"
+            ];
+            if (isset($banks[$bank_id])) {
+                $bank_name = $banks[$bank_id];
+            }
+        }
+
+        // Limits
+        $limits = [1 => 1000, 2 => 5000, 3 => 500000000];
+        $limit = $limits[$sender['kyc_tier']] ?? 0;
+
+        if ($data['amount'] > $limit) {
+            json_response("error", "Transfer amount exceeds your current KYC tier limit of $$limit.");
+        }
+
+        $stmt_limit = $db->prepare("SELECT SUM(amount) FROM transactions WHERE account_id = ? AND type = 'debit' AND channel = 'external_transfer' AND DATE(created_at) = CURDATE()");
+        $stmt_limit->bind_param("i", $sender['id']);
+        $stmt_limit->execute();
+        $today_sent = $stmt_limit->get_result()->fetch_row()[0] ?: 0;
+
+        if (($today_sent + $data['amount']) > $limit) {
+            json_response("error", "Daily transfer limit exceeded. Remaining: $" . ($limit - $today_sent));
+        }
+
+        $db->begin_transaction();
+        try {
+            $ref = "EXT" . time() . strtoupper(bin2hex(random_bytes(3)));
+
+            // Debit sender's account balance
+            $stmt3 = $db->prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?");
+            $stmt3->bind_param("di", $data['amount'], $sender['id']);
+            $stmt3->execute();
+
+            $bal_after_s = $sender['balance'] - $data['amount'];
+            $narration = $data['narration'] ?? ('External Transfer to ' . $data['manual_account_name']);
+            $account_name = $data['manual_account_name'];
+
+            // Insert transaction with status = 'pending'
+            $stmt5 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, external_bank_name, external_account_name, status) VALUES (?, 'debit', 'external_transfer', ?, ?, ?, ?, ?, ?, 'pending')");
+            $stmt5->bind_param("iddssss", $sender['id'], $data['amount'], $bal_after_s, $narration, $ref, $bank_name, $account_name);
+            $stmt5->execute();
+
+            $db->commit();
+            json_response("success", "External transfer submitted and pending approval", ["reference" => $ref]);
+        } catch (Exception $e) {
+            $db->rollback();
+            json_response("error", "External transfer failed: " . $e->getMessage());
         }
         break;
 
@@ -1246,17 +1347,60 @@ case 'get_transactions':
             if ($row['type'] === 'debit') {
                 $row['sender_name'] = $row['user_name'];
                 $row['sender_account'] = $row['account_number'];
-                $row['recipient_name'] = $row['counterparty_name'] ?? 'System/Other';
-                $row['recipient_account'] = $row['counterparty_account_number'] ?? 'N/A';
+                $row['recipient_name'] = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Recipient';
+                $row['recipient_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
             } else {
-                $row['sender_name'] = $row['counterparty_name'] ?? 'System/Other';
-                $row['sender_account'] = $row['counterparty_account_number'] ?? 'N/A';
+                $row['sender_name'] = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Sender';
+                $row['sender_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
                 $row['recipient_name'] = $row['user_name'];
                 $row['recipient_account'] = $row['account_number'];
             }
             $txs[] = $row;
         }
         json_response("success", "Transactions", $txs);
+        break;
+
+    case 'admin_review_transaction':
+        $user = require_auth();
+        if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') json_response("error", "Forbidden");
+
+        $data = json_decode(file_get_contents("php://input"), true) ?? [];
+        if (empty($data['transaction_id']) || empty($data['action'])) json_response("error", "Missing params");
+
+        $db = Database::getInstance()->getConnection();
+        $db->begin_transaction();
+        try {
+            $stmt = $db->prepare("SELECT * FROM transactions WHERE id = ?");
+            $stmt->bind_param("i", $data['transaction_id']);
+            $stmt->execute();
+            $tx = $stmt->get_result()->fetch_assoc();
+
+            if (!$tx) throw new Exception("Transaction not found");
+            if ($tx['status'] !== 'pending') throw new Exception("Transaction is not pending");
+
+            if ($data['action'] === 'approve') {
+                $stmt_app = $db->prepare("UPDATE transactions SET status = 'completed' WHERE id = ?");
+                $stmt_app->bind_param("i", $tx['id']);
+                $stmt_app->execute();
+            } else if ($data['action'] === 'decline') {
+                $stmt_dec = $db->prepare("UPDATE transactions SET status = 'failed' WHERE id = ?");
+                $stmt_dec->bind_param("i", $tx['id']);
+                $stmt_dec->execute();
+
+                // Refund the debited amount to user's account
+                $stmt_ref = $db->prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?");
+                $stmt_ref->bind_param("di", $tx['amount'], $tx['account_id']);
+                $stmt_ref->execute();
+            } else {
+                throw new Exception("Invalid action specified");
+            }
+
+            $db->commit();
+            json_response("success", "Transaction updated successfully");
+        } catch (Exception $e) {
+            $db->rollback();
+            json_response("error", "Failed to update transaction: " . $e->getMessage());
+        }
         break;
 
     case 'admin_review_kyc':
