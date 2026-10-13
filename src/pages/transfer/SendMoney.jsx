@@ -156,7 +156,8 @@ const SendMoney = () => {
 
     setLoading(true);
     try {
-      const response = await api.post('?action=internal_transfer', {
+      const endpoint = transferType === 'external' ? '?action=external_transfer' : '?action=internal_transfer';
+      const response = await api.post(endpoint, {
         receiver_account_number: formData.account_number,
         amount: formData.amount,
         narration: formData.narration,
@@ -349,8 +350,14 @@ const SendMoney = () => {
             <div className="flex justify-center">
               <CheckCircle2 size={80} className="text-green-500" />
             </div>
-            <h2 className="text-2xl font-bold text-chase-navy">Transfer Successful!</h2>
-            <p className="text-gray-500">Your transfer of {formatUSD(formData.amount)} to {recipient?.account_holder_name} has been completed.</p>
+            <h2 className="text-2xl font-bold text-chase-navy">
+              {transferType === 'external' ? 'Transfer Submitted!' : 'Transfer Successful!'}
+            </h2>
+            <p className="text-gray-500">
+              {transferType === 'external'
+                ? `Your external transfer of ${formatUSD(formData.amount)} to ${formData.manual_account_name} has been submitted and is pending review.`
+                : `Your transfer of ${formatUSD(formData.amount)} to ${recipient?.account_holder_name} has been completed.`}
+            </p>
             <div className="pt-6">
               <Button onClick={() => window.location.href = '/dashboard'} className="w-full">Back to Dashboard</Button>
             </div>
