@@ -386,6 +386,7 @@ case 'get_transactions':
             t.reference,
             t.external_bank_name,
             t.external_account_name,
+            t.external_account_number,
             t.status,
             t.created_at,
  
@@ -430,10 +431,10 @@ case 'get_transactions':
             $row['sender_name']       = $row['own_name'];
             $row['sender_account']    = $row['own_account_number'];
             $row['recipient_name']    = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Recipient';
-            $row['recipient_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
+            $row['recipient_account'] = $row['counterparty_account_number'] ?? $row['external_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
         } else {
             $row['sender_name']       = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Sender';
-            $row['sender_account']    = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
+            $row['sender_account']    = $row['counterparty_account_number'] ?? $row['external_account_number'] ?? ($row['external_bank_name'] ?? 'External Bank');
             $row['recipient_name']    = $row['own_name'];
             $row['recipient_account'] = $row['own_account_number'];
         }
@@ -613,6 +614,10 @@ case 'get_transactions':
             json_response("error", "Missing transfer details");
         }
 
+        if (!is_numeric($data['amount']) || (float)$data['amount'] <= 0) {
+            json_response("error", "Invalid transfer amount");
+        }
+
         $db = Database::getInstance()->getConnection();
 
         $stmt = $db->prepare("SELECT pin_hash FROM users WHERE id = ?");
@@ -693,8 +698,8 @@ case 'get_transactions':
             $account_name = $data['manual_account_name'];
 
             // Insert transaction with status = 'pending'
-            $stmt5 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, external_bank_name, external_account_name, status) VALUES (?, 'debit', 'external_transfer', ?, ?, ?, ?, ?, ?, 'pending')");
-            $stmt5->bind_param("iddssss", $sender['id'], $data['amount'], $bal_after_s, $narration, $ref, $bank_name, $account_name);
+            $stmt5 = $db->prepare("INSERT INTO transactions (account_id, type, channel, amount, balance_after, narration, reference, external_bank_name, external_account_name, external_account_number, status) VALUES (?, 'debit', 'external_transfer', ?, ?, ?, ?, ?, ?, ?, 'pending')");
+            $stmt5->bind_param("iddsssss", $sender['id'], $data['amount'], $bal_after_s, $narration, $ref, $bank_name, $account_name, $data['receiver_account_number']);
             $stmt5->execute();
 
             $db->commit();
@@ -1348,10 +1353,10 @@ case 'get_transactions':
                 $row['sender_name'] = $row['user_name'];
                 $row['sender_account'] = $row['account_number'];
                 $row['recipient_name'] = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Recipient';
-                $row['recipient_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
+                $row['recipient_account'] = $row['counterparty_account_number'] ?? $row['external_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
             } else {
                 $row['sender_name'] = $row['counterparty_name'] ?? $row['external_account_name'] ?? 'External Sender';
-                $row['sender_account'] = $row['counterparty_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
+                $row['sender_account'] = $row['counterparty_account_number'] ?? $row['external_account_number'] ?? ($row['external_bank_name'] ?? 'N/A');
                 $row['recipient_name'] = $row['user_name'];
                 $row['recipient_account'] = $row['account_number'];
             }

@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     counterparty_account_id INT,
     external_bank_name VARCHAR(100),
     external_account_name VARCHAR(100),
+    external_account_number VARCHAR(50),
     status ENUM('pending', 'completed', 'failed', 'reversed') DEFAULT 'completed',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
